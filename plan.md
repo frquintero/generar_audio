@@ -46,3 +46,12 @@ Key features:
 - Package the script for easy distribution
 - Monitor API usage and costs
 - Update dependencies as needed for compatibility
+
+### Phase 6: TXT File Input Feature
+- Define metadata structure as key-value pairs in first lines of TXT file (e.g., Language: Spanish, Style: surfer, Output: hello.mp3)
+- Add command to generate a template TXT file with metadata headers for language, style, and output
+- Implement reading TXT file input with text content and parsing metadata from first rows
+- Use default values for language, style, and output if metadata is missing or incomplete
+- Integrate TXT file reading into the command-line interface
+- Update CLI to accept file path as input parameter
+- Add validation for TXT file format and metadata

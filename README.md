@@ -4,10 +4,11 @@ A Node.js CLI tool that generates speech audio from text using OpenAI's GPT-4o-m
 
 ## Features
 
-- Generate MP3 audio files from text input
+- Generate MP3 audio files from text input or TXT files
 - Support for multiple languages and narration styles
 - Command-line interface for easy usage
-- Configurable output file names
+- Configurable output file names via CLI or TXT metadata
+- TXT file template generation for easy setup
 - Uses OpenAI's high-quality TTS model
 
 ## Prerequisites
@@ -42,12 +43,27 @@ npm start -- -t "Hello world"
 npm start -- -t "¡Hola mundo!" -l Spanish -s surfer -o hello.mp3
 ```
 
+### TXT File Input
+
+Generate a template TXT file first:
+
+```bash
+npm start -- generate-template
+```
+
+Then edit the generated `template.txt` with your text and metadata. Generate audio from TXT file:
+
+```bash
+npm start -- -f template.txt
+```
+
 ### Available Options
 
-- `-t, --text <text>`: Required. The text to convert to speech
+- `-t, --text <text>`: The text to convert to speech (required if -f not provided)
+- `-f, --file <file>`: TXT file to read text and metadata from (alternative to -t)
 - `-l, --language <language>`: Language for narration (default: Spanish)
 - `-s, --style <style>`: Narration style (default: surfer)
-  - Available styles: surfer, formal, casual
+  - Available styles: surfer, formal, casual, normal
 - `-o, --output <file>`: Output file name (default: output.mp3)
 
 ### Examples
@@ -61,6 +77,12 @@ npm start -- -t "Thank you. I am now a robot with a voice." -l English -s formal
 
 # Custom output file
 npm start -- -t "Hola" -o greeting.mp3
+
+# Generate from TXT file
+npm start -- -f mytext.txt
+
+# Override TXT metadata with CLI options
+npm start -- -f mytext.txt -l English -o custom.mp3
 ```
 
 ## Supported Languages
@@ -74,11 +96,33 @@ The tool supports any language supported by OpenAI's TTS model. Common languages
 - Portuguese
 - And many more
 
+## TXT File Format
+
+TXT files can contain metadata in the first lines followed by the text content. Metadata lines are in the format `Key: Value`. The text starts after a blank line.
+
+Example:
+
+```
+Language: English
+Style: normal
+Output: myaudio.mp3
+
+This is the text to convert to speech. It can span multiple lines.
+```
+
+Supported metadata keys:
+- `Language`: Narration language (default: Spanish)
+- `Style`: Narration style (default: surfer)
+- `Output`: Output file name (default: output.mp3)
+
+If metadata is missing or incomplete, defaults are used. CLI options override TXT metadata.
+
 ## Supported Styles
 
 - `surfer`: Relaxed and enthusiastic, like a surfer
 - `formal`: Formal and professional
 - `casual`: Casual and friendly
+- `normal`: Normal and natural
 
 You can also specify custom styles, which will be passed directly to the TTS model.
 
