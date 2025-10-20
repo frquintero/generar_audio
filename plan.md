@@ -55,3 +55,20 @@ Key features:
 - Integrate TXT file reading into the command-line interface
 - Update CLI to accept file path as input parameter
 - Add validation for TXT file format and metadata
+
+### Phase 7: Voice Selection Feature
+- Research available voices in OpenAI GPT-4o-mini-TTS (alloy, echo, fable, onyx, nova, shimmer, etc.)
+- Add -v, --voice CLI option with validation for allowed voices
+- Add Voice to TXT file metadata parsing
+- Update experimental_generateSpeech API call to include voice parameter
+- Set default voice to 'alloy' if not specified
+- Update README with voice options and usage examples
+
+### Phase 8: Interactive CLI Interface
+- Install inquirer.js for interactive prompts
+- Implement --interactive flag to enable guided mode
+- Create step-by-step prompts allowing user to choose: enter text directly or specify TXT file name from root directory
+- Create prompts for language, style, voice (with list of valid voices), output file with default values offered
+- Integrate interactive mode with existing CLI functionality
+- Add help text and validation in interactive mode
+- Update README with interactive usage instructions

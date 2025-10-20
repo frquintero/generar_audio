@@ -4,8 +4,11 @@ import { experimental_generateSpeech as speech } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { writeFile, readFile } from 'fs/promises';
 import { Command } from 'commander';
+import inquirer from 'inquirer';
 
 const program = new Command();
+
+const validVoices = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse'];
 
 program
   .name('generar-audio')
@@ -15,53 +18,153 @@ program
   .option('-f, --file <file>', 'TXT file to read text and metadata from')
   .option('-l, --language <language>', 'Language for narration')
   .option('-s, --style <style>', 'Narration style')
+  .option('-v, --voice <voice>', 'Voice for narration', 'alloy')
   .option('-o, --output <file>', 'Output file name')
+  .option('--interactive', 'Run in interactive mode')
   .action(async (options) => {
     try {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY environment variable is not set');
+      if (options.interactive) {
+        await runInteractive();
+        return;
       }
 
-      let { text, language, style, output } = options;
-      if (options.file) {
-        const content = await readFile(options.file, 'utf-8');
-        const parsed = parseTxtFile(content);
-        text = text || parsed.text;
-        language = language || parsed.language;
-        style = style || parsed.style;
-        output = output || parsed.output;
-      }
-      if (!text) {
-        throw new Error('Text must be provided either via -t option or -f file');
-      }
-      language = language || 'Spanish';
-      style = style || 'normal';
-      output = output || 'output.mp3';
-
-      const instructions = generateInstructions(language, style);
-
-      console.log('Generating audio...');
-      const { audio } = await speech({
-        model: openai.speech('gpt-4o-mini-tts'),
-        text: text,
-        instructions: instructions
-      });
-
-      await writeFile(output, audio.uint8Array);
-      console.log(`Audio file generated successfully: ${output}`);
+      await generateAudio(options);
     } catch (error) {
-      console.error('Error generating audio:', error.message);
+      console.error('Error:', error.message);
       process.exit(1);
     }
   });
+
+async function generateAudio(options) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is not set');
+  }
+
+  let { text, language, style, voice, output } = options;
+  if (options.file) {
+    const content = await readFile(options.file, 'utf-8');
+    const parsed = parseTxtFile(content);
+    text = text || parsed.text;
+    language = language || parsed.language;
+    style = style || parsed.style;
+    voice = voice || parsed.voice;
+    output = output || parsed.output;
+  }
+  if (!text) {
+    throw new Error('Text must be provided either via -t option or -f file');
+  }
+  language = language || 'Spanish';
+  style = style || 'normal';
+  voice = voice || 'alloy';
+  output = output || 'output.mp3';
+
+  if (!validVoices.includes(voice)) {
+    throw new Error(`Invalid voice '${voice}'. Valid voices: ${validVoices.join(', ')}`);
+  }
+
+  const instructions = generateInstructions(language, style);
+
+  console.log('Generating audio...');
+  const { audio } = await speech({
+    model: openai.speech('gpt-4o-mini-tts'),
+    text: text,
+    voice: voice,
+    instructions: instructions
+  });
+
+  await writeFile(output, audio.uint8Array);
+  console.log(`Audio file generated successfully: ${output}`);
+}
+
+async function runInteractive() {
+  const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'inputType',
+      message: 'How would you like to provide the text?',
+      choices: [
+        { name: 'Enter text directly', value: 'text' },
+        { name: 'Use a TXT file from the current directory', value: 'file' }
+      ]
+    }
+  ]);
+
+  let text, file;
+  if (answers.inputType === 'text') {
+    const textAnswer = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'text',
+        message: 'Enter the text to convert to speech:'
+      }
+    ]);
+    text = textAnswer.text;
+  } else {
+    // List TXT files in current directory
+    const fs = await import('fs');
+    const files = fs.readdirSync('.').filter(f => f.endsWith('.txt'));
+    if (files.length === 0) {
+      throw new Error('No TXT files found in the current directory');
+    }
+    const fileAnswer = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'file',
+        message: 'Select a TXT file:',
+        choices: files
+      }
+    ]);
+    file = fileAnswer.file;
+  }
+
+  const configAnswers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'language',
+      message: 'Language for narration:',
+      default: 'Spanish'
+    },
+    {
+      type: 'input',
+      name: 'style',
+      message: 'Narration style:',
+      default: 'normal'
+    },
+    {
+      type: 'list',
+      name: 'voice',
+      message: 'Select a voice:',
+      choices: validVoices.map(v => ({ name: v, value: v })),
+      default: 'alloy'
+    },
+    {
+      type: 'input',
+      name: 'output',
+      message: 'Output file name:',
+      default: 'output.mp3'
+    }
+  ]);
+
+  const options = {
+    text,
+    file,
+    language: configAnswers.language,
+    style: configAnswers.style,
+    voice: configAnswers.voice,
+    output: configAnswers.output
+  };
+
+  await generateAudio(options);
+}
 
 program
   .command('generate-template')
   .description('Generate a template TXT file for audio generation')
   .action(async () => {
     const template = `Language: Spanish
-Style: surfer
+Style: normal
+Voice: alloy
 Output: output.mp3
 
 Your text here.`;
@@ -111,7 +214,8 @@ function parseTxtFile(content) {
   return {
     text,
     language: metadata.language || 'Spanish',
-    style: metadata.style || 'surfer',
+    style: metadata.style || 'normal',
+    voice: metadata.voice || 'alloy',
     output: metadata.output || 'output.mp3'
   };
 }
