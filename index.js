@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import { experimental_generateSpeech as speech } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { writeFile, readFile } from 'fs/promises';
@@ -198,7 +199,7 @@ function parseTxtFile(content) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line === '') {
+    if (line === '' && i < lines.length - 1) {
       textStart = i + 1;
       break;
     }

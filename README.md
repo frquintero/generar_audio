@@ -24,7 +24,13 @@ A Node.js CLI tool that generates speech audio from text using OpenAI's GPT-4o-m
 
 ## Setup
 
-Set your OpenAI API key as a global environment variable:
+Create a `.env` file in the root directory with your OpenAI API key:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+```
+
+Alternatively, set it as a global environment variable:
 
 ```bash
 export OPENAI_API_KEY=your_api_key_here
@@ -176,6 +182,8 @@ The tool includes comprehensive error handling for:
 - `ai`: Vercel AI SDK
 - `@ai-sdk/openai`: OpenAI integration for AI SDK
 - `commander`: Command-line interface library
+- `dotenv`: Environment variable loader
+- `inquirer`: Interactive CLI prompts
 
 ## License
 
